@@ -1,0 +1,53 @@
+name: "Extension Manifest Liar Scanner"
+description: >-
+  Compare a browser/VS Code extension manifest.json's declared permissions and data-collection claims against static code analysis. Flags the lie when code exfiltrates what the manifest says it never collects. Fails CI on HIGH/CRITICAL findings. By Ingenious AI.
+author: "Ingenious AI"
+
+branding:
+  icon: "file-text"
+  color: "blue"
+
+inputs:
+  manifest:
+    description: Path to manifest.json, relative to the repository root.
+    required: false
+    default: "manifest.json"
+  code-glob:
+    description: >-
+      Glob for JS/TS files to analyze, relative to repo root
+      (e.g. 'src/**/*.js'). Empty = manifest only.
+    required: false
+    default: ""
+  fail-on:
+    description: >-
+      Comma-separated severities that fail the build (e.g. CRITICAL,HIGH).
+    required: false
+    default: "CRITICAL,HIGH"
+
+outputs:
+  verdict:
+    description: Worst severity found (CRITICAL, HIGH, MEDIUM, LOW, INFO, or NONE).
+    value: ${{ steps.scan.outputs.verdict }}
+  findings-count:
+    description: Number of findings.
+    value: ${{ steps.scan.outputs.findings-count }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run Extension Manifest Liar Scanner
+      id: scan
+      shell: bash
+      run: |
+        set -u
+        REPORT="$RUNNER_TEMP/scan-report.json"
+        export FAIL_ON="${{ inputs.fail-on }}"
+        python3 "${{ github.action_path }}/extension_manifest_liar_scanner.py" --manifest "${{ github.workspace }}/${{ inputs.manifest }}" $([ -n "${{ inputs.code-glob }}" ] && (cd "${{ github.workspace }}" && for f in ${{ inputs.code-glob }}; do printf -- "--code %s " "$f"; done)) --json > "$REPORT" 2> "$RUNNER_TEMP/scan-stderr.txt" || true
+        echo 'CmltcG9ydCBqc29uLCBvcywgc3lzCnNldl9vcmRlciA9IHsiQ1JJVElDQUwiOiAwLCAiSElHSCI6IDEsICJNRURJVU0iOiAyLCAiTE9XIjogMywgIklORk8iOiA0fQpkZWYgd29yc3Rfb2YoZmluZGluZ3MpOgogICAgdyA9ICJOT05FIgogICAgZm9yIGYgaW4gZmluZGluZ3M6CiAgICAgICAgcyA9IGYuZ2V0KCJzZXZlcml0eSIsICJJTkZPIikKICAgICAgICBpZiBzZXZfb3JkZXIuZ2V0KHMsIDkpIDwgc2V2X29yZGVyLmdldCh3LCA5KToKICAgICAgICAgICAgdyA9IHMKICAgIHJldHVybiB3CmZhaWxfb24gPSBzZXQoeC5zdHJpcCgpLnVwcGVyKCkgZm9yIHggaW4gb3MuZW52aXJvbi5nZXQoIkZBSUxfT04iLCAiQ1JJVElDQUwsSElHSCIpLnNwbGl0KCIsIikgaWYgeC5zdHJpcCgpKQoKcmVwb3J0ID0ganNvbi5sb2FkKG9wZW4ob3MucGF0aC5qb2luKG9zLmVudmlyb25bIlJVTk5FUl9URU1QIl0sICJzY2FuLXJlcG9ydC5qc29uIikpKQpmaW5kaW5ncyA9IHJlcG9ydC5nZXQoImZpbmRpbmdzIiwgW10pCnZlcmRpY3QgPSByZXBvcnQuZ2V0KCJ3b3JzdCIsIHdvcnN0X29mKGZpbmRpbmdzKSkKaWYgdmVyZGljdCBub3QgaW4gc2V2X29yZGVyOiB2ZXJkaWN0ID0gd29yc3Rfb2YoZmluZGluZ3MpCgoKc3VtbWFyeV9wYXRoID0gb3MuZW52aXJvbi5nZXQoIkdJVEhVQl9TVEVQX1NVTU1BUlkiLCAiIikKaWYgc3VtbWFyeV9wYXRoOgogICAgd2l0aCBvcGVuKHN1bW1hcnlfcGF0aCwgImEiLCBlbmNvZGluZz0idXRmLTgiKSBhcyBmaDoKICAgICAgICBmaC53cml0ZSgiXG4jIyAiICsgIkV4dGVuc2lvbiBNYW5pZmVzdCBMaWFyIFNjYW5uZXIiICsgIiBzY2FuXG5cbiIpCiAgICAgICAgZmgud3JpdGUoInwgVmVyZGljdCB8IEZpbmRpbmdzIHxcbnwtLS18LS0tfFxuIikKICAgICAgICBmaC53cml0ZSgifCAlcyB8ICVkIHxcblxuIiAlICh2ZXJkaWN0LCBsZW4oZmluZGluZ3MpKSkKCm91dF9wYXRoID0gb3MuZW52aXJvbi5nZXQoIkdJVEhVQl9PVVRQVVQiLCAiIikKaWYgb3V0X3BhdGg6CiAgICB3aXRoIG9wZW4ob3V0X3BhdGgsICJhIiwgZW5jb2Rpbmc9InV0Zi04IikgYXMgZmg6CiAgICAgICAgZmgud3JpdGUoInZlcmRpY3Q9JXNcbiIgJSB2ZXJkaWN0KQogICAgICAgIGZoLndyaXRlKCJmaW5kaW5ncy1jb3VudD0lZFxuIiAlIGxlbihmaW5kaW5ncykpCiAgICAgICAgZmgud3JpdGUoImZhaWxlZD0lc1xuIiAlICgidHJ1ZSIgaWYgKHZlcmRpY3QgaW4gZmFpbF9vbiBhbmQgdmVyZGljdCAhPSAiTk9ORSIpIGVsc2UgImZhbHNlIikpCnByaW50KCJ2ZXJkaWN0PSVzIGZpbmRpbmdzPSVkIGZhaWxlZD0lcyIgJSAodmVyZGljdCwgbGVuKGZpbmRpbmdzKSwgInRydWUiIGlmICh2ZXJkaWN0IGluIGZhaWxfb24gYW5kIHZlcmRpY3QgIT0gIk5PTkUiKSBlbHNlICJmYWxzZSIpKQo=' | base64 -d > "$RUNNER_TEMP/eval.py"
+        python3 "$RUNNER_TEMP/eval.py"
+    - name: Fail on findings
+      shell: bash
+      if: steps.scan.outputs.failed == 'true'
+      run: |
+        echo "::error::Extension Manifest Liar Scanner found findings at or above the fail-on threshold."
+        exit 1

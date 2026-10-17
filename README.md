@@ -1,5 +1,21 @@
 # extension-manifest-liar-scanner
 
+
+## ⚡ GitHub Action
+
+Run it in CI — fails the build on findings at or above your threshold:
+
+```yaml
+- uses: actions/checkout@v4
+- uses: Iceman2050/extension-manifest-liar-scanner@v1
+      with:
+        manifest: 'manifest.json'
+        code-glob: 'src/**/*.js'
+        fail-on: 'CRITICAL,HIGH' # default
+```
+
+Full input reference: [`action.yml`](./action.yml).
+
 **Extension scanners look for malware. Nobody checks the lie.**
 
 In October 2026, Socket found **16 malicious Firefox extensions** impersonating Rabby and OKX crypto wallets: they intercepted 12/24-word recovery phrases and private keys during wallet import and exfiltrated them to Cloudflare Workers. **Every single manifest declared the extension collected no data.**

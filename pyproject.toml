@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "extension-manifest-liar-scanner"
+version = "1.0.0"
+description = "Check extension manifest honesty against code (stdlib only)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+
+[project.scripts]
+extension-manifest-liar-scanner = "extension_manifest_liar_scanner:main"
+
+[tool.setuptools]
+py-modules = ["extension_manifest_liar_scanner"]
